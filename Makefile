@@ -10,5 +10,12 @@ build: ## Build prod-like container
 up: ## Bring up containers and daemonize
 	docker compose up -d
 
+down:
+	docker compose down
+
+fresh: build
+	docker compose down -v
+	docker compose up -d
+
 shell:
 	docker compose run bs_int /bin/bash
