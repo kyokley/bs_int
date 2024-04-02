@@ -8,4 +8,7 @@ build: ## Build prod-like container
 	docker build --tag=kyokley/bs_int .
 
 up: ## Bring up containers and daemonize
-	docker-compose up -d
+	docker compose up -d
+
+shell:
+	docker compose run bs_int /bin/bash
