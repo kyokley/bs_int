@@ -1,0 +1,40 @@
+services:
+    postgres:
+        hostname: postgres
+        image: postgres:15-alpine
+        environment:
+          - POSTGRES_PASSWORD=postgres
+          - POSTGRES_HOST_AUTH_METHOD=trust
+        ports:
+            - "5432:5432"
+        volumes:
+          - bs_int-data:/var/lib/postgresql/data
+        networks:
+          - bs_int-backend
+
+    bs_int:
+        image: kyokley/bs_int
+        build:
+          context: .
+        command:
+            sh -c "/venv/bin/python manage.py collectstatic --no-input &&
+                   /venv/bin/python manage.py migrate &&
+                   /venv/bin/python manage.py runserver 0.0.0.0:8000"
+        hostname: bs_int
+        depends_on:
+            - "postgres"
+        ports:
+            - "8000:8000"
+        tty: true
+        stdin_open: true
+        networks:
+          - bs_int-backend
+        volumes:
+          - .:/code
+
+# Persistent Volumes
+volumes:
+  bs_int-data:
+
+networks:
+    bs_int-backend:
