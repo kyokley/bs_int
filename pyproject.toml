@@ -6,9 +6,22 @@ authors = ["Kevin Yokley <kyokley2@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "3.11"
+python = "^3.11"
+django = "^5.0.3"
+requests = "^2.31.0"
 
+
+[tool.poetry.group.dev.dependencies]
+bpython = "^0.24"
+pytest-django = "^4.8.0"
+pdbpp = "^0.10.3"
+django-silk = "^5.1.0"
+black = "^24.3.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+select = ["E", "F"]
+ignore = ["E501"]
