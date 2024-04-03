@@ -8,15 +8,24 @@ build: ## Build prod-like container
 	docker build --tag=kyokley/bs_int .
 
 up: ## Bring up containers and daemonize
-	# docker compose up -d
-	docker compose up
+	docker compose up -d
+	docker compose logs -f bs_int
 
 down:
 	docker compose down
 
-fresh: build
+clear-db:
 	docker compose down -v
-	docker compose up -d
+
+fresh: clear-db migrate up
 
 shell:
 	docker compose run bs_int /bin/bash
+
+migrate:
+	docker compose up -d
+	docker compose exec bs_int python manage.py migrate
+	docker compose exec bs_int python manage.py initdata
+
+attach:
+	docker attach $$(docker ps -qf name=bs_int-bs_int)

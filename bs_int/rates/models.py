@@ -21,7 +21,7 @@ class DataSetManager(models.Manager):
         if current_date.month == date.month and current_date.year == date.year:
             URL = CURRENT_MONTH_TREASURY_URL_TEMPLATE.format(
                 year=date.year,
-                month=date.month)
+                month=f'{date.month:02}')
         else:
             URL = ANNUAL_TREASURY_URL_TEMPLATE.format(
                 year=date.year)
@@ -39,10 +39,21 @@ class DataSetManager(models.Manager):
                 self.model._treasury_map[key]: val
                 for key, val in row.items()
             }
-            self.update_or_create(
-                date=data_date,
-                defaults=data_values,
-            )
+            data_values['loaded'] = True
+
+            obj = self.filter(date=data_date).first()
+            if obj:
+                self.filter(pk=obj.pk).update(**data_values)
+            else:
+                self.create(
+                    date=data_date,
+                    **data_values,
+                )
+
+    def retrieve_missing_treasury_data(self):
+        qs = self.filter(loaded=False)
+        for obj in qs:
+            self.retrieve_treasury_data(obj.date)
 
 
 class DataSet(models.Model):
@@ -64,20 +75,21 @@ class DataSet(models.Model):
     date = models.DateField(null=False,
                             blank=False)
 
-    one_month = models.FloatField(null=False, blank=False)
-    two_month = models.FloatField(null=False, blank=False)
-    three_month = models.FloatField(null=False, blank=False)
-    four_month = models.FloatField(null=False, blank=False)
-    six_month = models.FloatField(null=False, blank=False)
+    one_month = models.FloatField(null=True, blank=False)
+    two_month = models.FloatField(null=True, blank=False)
+    three_month = models.FloatField(null=True, blank=False)
+    four_month = models.FloatField(null=True, blank=False)
+    six_month = models.FloatField(null=True, blank=False)
 
-    one_year = models.FloatField(null=False, blank=False)
-    two_year = models.FloatField(null=False, blank=False)
-    three_year = models.FloatField(null=False, blank=False)
-    five_year = models.FloatField(null=False, blank=False)
-    seven_year = models.FloatField(null=False, blank=False)
-    ten_year = models.FloatField(null=False, blank=False)
-    twenty_year = models.FloatField(null=False, blank=False)
-    thirty_year = models.FloatField(null=False, blank=False)
+    one_year = models.FloatField(null=True, blank=False)
+    two_year = models.FloatField(null=True, blank=False)
+    three_year = models.FloatField(null=True, blank=False)
+    five_year = models.FloatField(null=True, blank=False)
+    seven_year = models.FloatField(null=True, blank=False)
+    ten_year = models.FloatField(null=True, blank=False)
+    twenty_year = models.FloatField(null=True, blank=False)
+    thirty_year = models.FloatField(null=True, blank=False)
+    loaded = models.BooleanField(default=False, editable=False)
 
     objects = DataSetManager()
 
@@ -91,3 +103,7 @@ class DataSet(models.Model):
 
     def __repr__(self):
         return str(self)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.__class__.objects.retrieve_missing_treasury_data()
