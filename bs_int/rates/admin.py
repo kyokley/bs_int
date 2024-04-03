@@ -1,9 +1,9 @@
 from django.contrib import admin
 
-from rates.models import DataSet
+from rates.models import TreasuryData
 
 # Register your models here.
-@admin.register(DataSet)
+@admin.register(TreasuryData)
 class DataSetAdmin(admin.ModelAdmin):
     ordering = ('-date',)
     readonly_fields = (

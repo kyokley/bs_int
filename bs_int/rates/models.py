@@ -56,7 +56,7 @@ class DataSetManager(models.Manager):
             self.retrieve_treasury_data(obj.date)
 
 
-class DataSet(models.Model):
+class TreasuryData(models.Model):
     _treasury_map = {'1 Mo': 'one_month',
                      '1 Yr': 'one_year',
                      '10 Yr': 'ten_year',

@@ -26,7 +26,7 @@ class Command(BaseCommand):
         if not User.objects.filter(username=USER).exists():
             user = User.objects.create_user(USER, password=WERT66, is_staff=True)
 
-            for class_str in ("dataset",):
+            for class_str in ("treasurydata",):
                 user.user_permissions.add(
                     Permission.objects.get(codename=f"view_{class_str}")
                 )
