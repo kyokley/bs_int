@@ -10,7 +10,6 @@ from django.utils import timezone
 
 REQUEST_TIMEOUT = 60
 
-# Create your models here.
 CURRENT_MONTH_TREASURY_URL_TEMPLATE = 'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/all/{year}{month}?type=daily_treasury_yield_curve&field_tdr_date_value_month={year}{month}&page&_format=csv'
 
 ANNUAL_TREASURY_URL_TEMPLATE = 'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/{year}/all?type=daily_treasury_yield_curve&field_tdr_date_value={year}&page&_format=csv'
@@ -34,6 +33,17 @@ class TreasuryData(models.Model):
                      '7 Yr': 'seven_year',
                      }
 
+    _maturity_order = ('six_month',
+                       'one_year',
+                       'two_year',
+                       'three_year',
+                       'five_year',
+                       'seven_year',
+                       'ten_year',
+                       'twenty_year',
+                       'thirty_year',
+                       )
+
     date = models.DateField(null=False,
                             blank=False)
 
@@ -51,7 +61,6 @@ class TreasuryData(models.Model):
     ten_year = models.FloatField(null=True, blank=False)
     twenty_year = models.FloatField(null=True, blank=False)
     thirty_year = models.FloatField(null=True, blank=False)
-    loaded = models.BooleanField(default=False, editable=False)
 
     class Meta:
         constraints = [
@@ -95,3 +104,27 @@ class TreasuryData(models.Model):
     def save(self, *args, **kwargs):
         self._retrieve_treasury_data()
         super().save(*args, **kwargs)
+
+    def _par_rates(self):
+        return [
+            getattr(self, attr)
+            for attr in self._maturity_order]
+
+    def _zero_rates(self):
+        zero_rates = []
+
+        for idx, attr in enumerate(self._maturity_order):
+            par_rate = getattr(self, attr)
+
+            if idx == 0:
+                zero_rates.append(par_rate)
+                continue
+
+            discounts_sum = 0
+            for i in range(idx):
+                discounts_sum += (par_rate / 2) / (1 + zero_rates[i] / 2) ** (i + 1)
+
+            remainder = 100 - discounts_sum
+            zero_rate = (((100 + par_rate / 2) / remainder) ** (1 / (i + 1)) - 1) * 2
+            zero_rates.append(zero_rate * 100)
+        return zero_rates

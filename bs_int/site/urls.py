@@ -22,3 +22,5 @@ urlpatterns = [
 ]
 
 urlpatterns += [path('silk/', include('silk.urls', namespace='silk'))]
+
+admin.site.site_header = 'Revantage Yield Curve Calculator'
