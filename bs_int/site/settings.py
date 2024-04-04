@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'bs_int.site',
     'bs_int.rates',
+    'silk',
 ]
 
 MIDDLEWARE = [
@@ -50,6 +51,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'silk.middleware.SilkyMiddleware',
 ]
 
 ROOT_URLCONF = 'bs_int.site.urls'

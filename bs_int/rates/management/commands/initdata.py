@@ -36,3 +36,6 @@ class Command(BaseCommand):
                 user.user_permissions.add(
                     Permission.objects.get(codename=f"change_{class_str}")
                 )
+                user.user_permissions.add(
+                    Permission.objects.get(codename=f"delete_{class_str}")
+                )

@@ -1,5 +1,6 @@
 import csv
 import requests
+import logging
 
 from io import StringIO
 from dateutil.parser import parse
@@ -14,46 +15,7 @@ CURRENT_MONTH_TREASURY_URL_TEMPLATE = 'https://home.treasury.gov/resource-center
 
 ANNUAL_TREASURY_URL_TEMPLATE = 'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/{year}/all?type=daily_treasury_yield_curve&field_tdr_date_value={year}&page&_format=csv'
 
-class DataSetManager(models.Manager):
-    def retrieve_treasury_data(self, date):
-        current_date = timezone.now().date()
-
-        if current_date.month == date.month and current_date.year == date.year:
-            URL = CURRENT_MONTH_TREASURY_URL_TEMPLATE.format(
-                year=date.year,
-                month=f'{date.month:02}')
-        else:
-            URL = ANNUAL_TREASURY_URL_TEMPLATE.format(
-                year=date.year)
-
-        resp = requests.get(URL, timeout=REQUEST_TIMEOUT)
-        resp.raise_for_status()
-
-        data = StringIO(resp.content.decode('utf-8'))
-        dict_reader = csv.DictReader(data)
-
-        for row in dict_reader:
-            data_date = parse(row.pop('Date'))
-
-            data_values = {
-                self.model._treasury_map[key]: val
-                for key, val in row.items()
-            }
-            data_values['loaded'] = True
-
-            obj = self.filter(date=data_date).first()
-            if obj:
-                self.filter(pk=obj.pk).update(**data_values)
-            else:
-                self.create(
-                    date=data_date,
-                    **data_values,
-                )
-
-    def retrieve_missing_treasury_data(self):
-        qs = self.filter(loaded=False)
-        for obj in qs:
-            self.retrieve_treasury_data(obj.date)
+logger = logging.getLogger(__file__)
 
 
 class TreasuryData(models.Model):
@@ -91,12 +53,11 @@ class TreasuryData(models.Model):
     thirty_year = models.FloatField(null=True, blank=False)
     loaded = models.BooleanField(default=False, editable=False)
 
-    objects = DataSetManager()
-
     class Meta:
         constraints = [
             models.UniqueConstraint('date', name='unique_date'),
         ]
+        verbose_name_plural = 'Treasury Data'
 
     def __str__(self):
         return f'<{self.__class__.__name__} {self.date}>'
@@ -104,6 +65,33 @@ class TreasuryData(models.Model):
     def __repr__(self):
         return str(self)
 
+    def _retrieve_treasury_data(self):
+        current_date = timezone.now().date()
+
+        if current_date.month == self.date.month and current_date.year == self.date.year:
+            URL = CURRENT_MONTH_TREASURY_URL_TEMPLATE.format(
+                year=self.date.year,
+                month=f'{self.date.month:02}')
+        else:
+            URL = ANNUAL_TREASURY_URL_TEMPLATE.format(
+                year=self.date.year)
+
+        resp = requests.get(URL, timeout=REQUEST_TIMEOUT)
+        resp.raise_for_status()
+
+        data = StringIO(resp.content.decode('utf-8'))
+        dict_reader = csv.DictReader(data)
+
+        for row in dict_reader:
+            data_date = parse(row.pop('Date'))
+
+            if data_date.date() == self.date:
+                for key, val in row.items():
+                    setattr(self, self._treasury_map[key], val)
+                break
+        else:
+            logger.warning(f'Treasury data for {self.date} was not found')
+
     def save(self, *args, **kwargs):
+        self._retrieve_treasury_data()
         super().save(*args, **kwargs)
-        self.__class__.objects.retrieve_missing_treasury_data()
