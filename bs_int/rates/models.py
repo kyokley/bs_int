@@ -132,9 +132,9 @@ class TreasuryData(models.Model):
 
             discounts_sum = 0
             for m in self._effective_maturities(maturity):
-                discounts_sum += (par_rate / 2) / (1 + zero_rates[i] / 2) ** (i + 1)
+                discounts_sum += (par_rate / 2) / (1 + zero_rates[m]) ** m.months
 
             remainder = 100 - discounts_sum
-            zero_rate = (((100 + par_rate / 2) / remainder) ** (1 / (i + 1)) - 1) * 2
+            zero_rate = (((100 + par_rate / 2) / remainder) ** (1 / m.months) - 1)
             zero_rates.append(zero_rate * 100)
         return zero_rates
