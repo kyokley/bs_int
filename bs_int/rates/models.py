@@ -2,6 +2,8 @@ import csv
 import requests
 import logging
 
+from collections import namedtuple
+
 from io import StringIO
 from dateutil.parser import parse
 
@@ -16,6 +18,7 @@ ANNUAL_TREASURY_URL_TEMPLATE = 'https://home.treasury.gov/resource-center/data-c
 
 logger = logging.getLogger(__file__)
 
+Maturity = namedtuple('Maturity', 'name,months')
 
 class TreasuryData(models.Model):
     _treasury_map = {'1 Mo': 'one_month',
@@ -33,16 +36,17 @@ class TreasuryData(models.Model):
                      '7 Yr': 'seven_year',
                      }
 
-    _maturity_order = ('six_month',
-                       'one_year',
-                       'two_year',
-                       'three_year',
-                       'five_year',
-                       'seven_year',
-                       'ten_year',
-                       'twenty_year',
-                       'thirty_year',
-                       )
+    _maturity_order = (
+        Maturity(name='six_month', months=6),
+        Maturity(name='one_year', months=12),
+        Maturity(name='two_year', months=24),
+        Maturity(name='three_year', months=36),
+        Maturity(name='five_year', months=60),
+        Maturity(name='seven_year', months=84),
+        Maturity(name='ten_year', months=120),
+        Maturity(name='twenty_year', months=240),
+        Maturity(name='thirty_year', months=360),
+    )
 
     date = models.DateField(null=False,
                             blank=False)
@@ -73,6 +77,12 @@ class TreasuryData(models.Model):
 
     def __repr__(self):
         return str(self)
+
+    @classmethod
+    def _effective_maturities(cls, maturity):
+        for m in cls._maturity_order:
+            if m.months <= maturity.months:
+                yield m
 
     def _retrieve_treasury_data(self):
         current_date = timezone.now().date()
@@ -107,21 +117,21 @@ class TreasuryData(models.Model):
 
     def _par_rates(self):
         return [
-            getattr(self, attr)
-            for attr in self._maturity_order]
+            getattr(self, maturity.name)
+            for maturity in self._maturity_order]
 
     def _zero_rates(self):
-        zero_rates = []
+        zero_rates = {}
 
-        for idx, attr in enumerate(self._maturity_order):
-            par_rate = getattr(self, attr)
+        for idx, maturity in enumerate(self._maturity_order):
+            par_rate = getattr(self, maturity.name)
 
             if idx == 0:
-                zero_rates.append(par_rate)
+                zero_rates[maturity] = par_rate
                 continue
 
             discounts_sum = 0
-            for i in range(idx):
+            for m in self._effective_maturities(maturity):
                 discounts_sum += (par_rate / 2) / (1 + zero_rates[i] / 2) ** (i + 1)
 
             remainder = 100 - discounts_sum
