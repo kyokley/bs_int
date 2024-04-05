@@ -81,7 +81,7 @@ class TreasuryData(models.Model):
     @classmethod
     def _effective_maturities(cls, maturity):
         for m in cls._maturity_order:
-            if m.months <= maturity.months:
+            if m.months < maturity.months:
                 yield m
 
     def _retrieve_treasury_data(self):
@@ -124,17 +124,26 @@ class TreasuryData(models.Model):
         zero_rates = {}
 
         for idx, maturity in enumerate(self._maturity_order):
-            par_rate = getattr(self, maturity.name)
+            logger.debug(f'Calculating {maturity.name}...')
+
+            par_rate = getattr(self, maturity.name) / 100
 
             if idx == 0:
-                zero_rates[maturity] = par_rate
+                zero_rates[maturity] = ((1 + par_rate / 2) ** (1 / maturity.months) - 1)
+                # zero_rates[maturity] = par_rate * 100
                 continue
 
             discounts_sum = 0
+            months = 0
             for m in self._effective_maturities(maturity):
-                discounts_sum += (par_rate / 2) / (1 + zero_rates[m]) ** m.months
+                while months < m.months:
+                    months += 6
+                    discounts = (par_rate / 2) / (1 + zero_rates[m]) ** months
+                    discounts_sum += discounts
 
-            remainder = 100 - discounts_sum
-            zero_rate = (((100 + par_rate / 2) / remainder) ** (1 / m.months) - 1)
-            zero_rates.append(zero_rate * 100)
+            remainder = 1 - discounts_sum
+            zero_rate = (((1 + par_rate / 2) / remainder) ** (1 / maturity.months) - 1)
+            zero_rates[maturity] = zero_rate
+
+        logger.debug(zero_rates)
         return zero_rates
