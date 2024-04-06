@@ -16,7 +16,7 @@ up: ## Bring up containers and daemonize
 	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} logs -f bs_int
 
 down:
-	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} down
+	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} down --remove-orphans
 
 clear-db:
 	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} down -v
