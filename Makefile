@@ -1,3 +1,4 @@
+DOCKER_COMPOSE_EXECUTABLE=$$(which docker-compose >/dev/null 2>&1 && echo 'docker-compose' || echo '${DOCKER_COMPOSE_EXECUTABLE}')
 PROD_COMPOSE_ARGS=-f docker-compose.yml -f docker-compose.prod.yml
 
 help: ## This help
@@ -10,28 +11,28 @@ build: ## Build prod-like container
 	docker build --tag=kyokley/bs_int .
 
 up: ## Bring up containers and daemonize
-	docker compose up -d
-	docker compose logs -f bs_int
+	${DOCKER_COMPOSE_EXECUTABLE} up -d
+	${DOCKER_COMPOSE_EXECUTABLE} logs -f bs_int
 
 down:
-	docker compose down
+	${DOCKER_COMPOSE_EXECUTABLE} down
 
 clear-db:
-	docker compose down -v
+	${DOCKER_COMPOSE_EXECUTABLE} down -v
 
 fresh: clear-db migrate up
 
 shell:
-	docker compose run bs_int /bin/bash
+	${DOCKER_COMPOSE_EXECUTABLE} run bs_int /bin/bash
 
 migrate:
-	docker compose up -d
-	docker compose exec bs_int python manage.py migrate
-	docker compose exec bs_int python manage.py initdata
+	${DOCKER_COMPOSE_EXECUTABLE} up -d
+	${DOCKER_COMPOSE_EXECUTABLE} exec bs_int python manage.py migrate
+	${DOCKER_COMPOSE_EXECUTABLE} exec bs_int python manage.py initdata
 
 attach:
 	docker attach $$(docker ps -qf name=bs_int-bs_int)
 
 prod-up: migrate
-	docker compose ${PROD_COMPOSE_ARGS} up -d
-	docker compose ${PROD_COMPOSE_ARGS} logs -f bs_int
+	${DOCKER_COMPOSE_EXECUTABLE} ${PROD_COMPOSE_ARGS} up -d
+	${DOCKER_COMPOSE_EXECUTABLE} ${PROD_COMPOSE_ARGS} logs -f bs_int
