@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-_^3b78(v6r(!^x+q+@-^#1bau$d1qa)*ccgyr481lmk$+&3$5d
 DEBUG = True
 
 ALLOWED_HOSTS = ['*', 'comet.dyndns.info']
-CSRF_TRUSTED_ORIGINS = ['comet.dyndns.info']
+CSRF_TRUSTED_ORIGINS = ['https://comet.dyndns.info']
 
 
 # Application definition
