@@ -36,6 +36,6 @@ attach:
 
 prod-up: migrate
 	${DOCKER_COMPOSE_EXECUTABLE} ${PROD_COMPOSE_ARGS} up -d
-	${DOCKER_COMPOSE_EXECUTABLE} ${PROD_COMPOSE_ARGS} logs -f bs_int
+	${DOCKER_COMPOSE_EXECUTABLE} ${PROD_COMPOSE_ARGS} logs -f
 
 prod-restart: down prod-up
