@@ -47,7 +47,7 @@ class TreasuryData(models.Model):
                      }
 
     _maturity_order = (
-        Maturity(name='six_month', months=6),
+        # Maturity(name='six_month', months=6),
         Maturity(name='one_year', months=12),
         Maturity(name='two_year', months=24),
         Maturity(name='three_year', months=36),
@@ -130,32 +130,42 @@ class TreasuryData(models.Model):
             getattr(self, maturity.name)
             for maturity in self._maturity_order]
 
+#    def _zero_rates(self):
+#        zero_rates = {}
+#
+#        for idx, maturity in enumerate(self._maturity_order):
+#            logger.debug(f'Calculating {maturity.name}...')
+#
+#            par_rate = getattr(self, maturity.name) / 100
+#
+#            if idx == 0:
+#                zero_rates[maturity] = ((1 + par_rate / 2) ** (1 / maturity.months) - 1)
+#                # zero_rates[maturity] = par_rate * 100
+#                continue
+#
+#            discounts_sum = 0
+#            months = 0
+#            for m in self._effective_maturities(maturity):
+#                while months < m.months:
+#                    months += 6
+#                    discounts = (par_rate / 2) / (1 + zero_rates[m]) ** months
+#                    discounts_sum += discounts
+#
+#            remainder = 1 - discounts_sum
+#            zero_rate = (((1 + par_rate / 2) / remainder) ** (1 / maturity.months) - 1)
+#            zero_rates[maturity] = zero_rate
+#
+#        logger.debug(zero_rates)
+#        return zero_rates
+
     def _zero_rates(self):
         zero_rates = {}
 
         for idx, maturity in enumerate(self._maturity_order):
-            logger.debug(f'Calculating {maturity.name}...')
-
             par_rate = getattr(self, maturity.name) / 100
-
-            if idx == 0:
-                zero_rates[maturity] = ((1 + par_rate / 2) ** (1 / maturity.months) - 1)
-                # zero_rates[maturity] = par_rate * 100
-                continue
-
-            discounts_sum = 0
-            months = 0
-            for m in self._effective_maturities(maturity):
-                while months < m.months:
-                    months += 6
-                    discounts = (par_rate / 2) / (1 + zero_rates[m]) ** months
-                    discounts_sum += discounts
-
-            remainder = 1 - discounts_sum
-            zero_rate = (((1 + par_rate / 2) / remainder) ** (1 / maturity.months) - 1)
+            df = 1 / ((1 + (par_rate / 2)) ** (maturity.months / 6))
+            zero_rate = 1/(df**(1/maturity.months)) - 1
             zero_rates[maturity] = zero_rate
-
-        logger.debug(zero_rates)
         return zero_rates
 
     def to_excel(self):

@@ -28,7 +28,8 @@ class DataSetAdmin(admin.ModelAdmin):
         first = queryset.first()
         output = first.to_excel()
 
+        filename = f'curve_{first.date.year}-{first.date.month}-{first.date.day}'
         response = HttpResponse(content_type="application/vnd.ms-excel")
-        response["Content-Disposition"] = "attachment; filename=curve.xlsx"
+        response["Content-Disposition"] = f"attachment; filename={filename}.xlsx"
         response.write(output.getvalue())
         return response
