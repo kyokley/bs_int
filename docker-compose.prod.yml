@@ -15,3 +15,6 @@ services:
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
+  bs_int:
+    environment:
+      - DJANGO_SETTINGS_MODULE=bs_int.site.prod_settings
