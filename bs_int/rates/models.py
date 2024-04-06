@@ -25,7 +25,7 @@ logger = logging.getLogger(__file__)
 EXCEL_TEMPLATE_FILE = Path(__file__).parent / 'quant_assessment_template.xlsx'
 PAR_VALUES_COL = 'C'
 PAR_VALUES_START_ROW = 19
-ZERO_RATES_COL = 'D'
+ZERO_RATES_COL = 'E'
 ZERO_RATES_START_ROW = 19
 
 Maturity = namedtuple('Maturity', 'name,months')
@@ -172,10 +172,10 @@ class Excel:
     def populate_data(self, par_values, zero_rates):
         ws = self.wb.active
 
-        for idx, par_val in enumerate(par_values, start=PAR_VALUES_START_ROW):
-            ws[f'{PAR_VALUES_COL}{idx}'] = par_val
+        for idx, par_val in enumerate(par_values[1:], start=PAR_VALUES_START_ROW):
+            ws[f'{PAR_VALUES_COL}{idx}'] = par_val / 100
 
-        for idx, zero_rate in enumerate(zero_rates, start=ZERO_RATES_START_ROW):
+        for idx, zero_rate in enumerate(list(zero_rates.values())[1:], start=ZERO_RATES_START_ROW):
             ws[f'{ZERO_RATES_COL}{idx}'] = zero_rate
 
     def stream(self):

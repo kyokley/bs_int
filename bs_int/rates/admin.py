@@ -26,9 +26,9 @@ class DataSetAdmin(admin.ModelAdmin):
 
     def download_excel(self, request, queryset):
         first = queryset.first()
-        output = first.stream()
+        output = first.to_excel()
 
         response = HttpResponse(content_type="application/vnd.ms-excel")
-        response["Content-Disposition"] = "attachment; filename=report.xlsx"
+        response["Content-Disposition"] = "attachment; filename=curve.xlsx"
         response.write(output.getvalue())
         return response
