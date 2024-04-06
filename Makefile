@@ -1,3 +1,5 @@
+PROD_COMPOSE_ARGS=-f docker-compose.yml -f docker-compose.prod.yml
+
 help: ## This help
 	@grep -F "##" $(MAKEFILE_LIST) | grep -vF '@grep -F "##" $$(MAKEFILE_LIST)' | sed -r 's/(:).*##/\1/' | sort
 
@@ -29,3 +31,7 @@ migrate:
 
 attach:
 	docker attach $$(docker ps -qf name=bs_int-bs_int)
+
+prod-up: migrate
+	docker compose ${PROD_COMPOSE_ARGS} up -d
+	docker compose ${PROD_COMPOSE_ARGS} logs -f bs_int
