@@ -5,7 +5,7 @@ if ! [ -x "$(command -v docker-compose)" ]; then
   exit 1
 fi
 
-domains=(comet.dyndns.info www.comet.dyndns.info)
+domains=(comet.dyndns.info)
 rsa_key_size=4096
 data_path="./certbot"
 email="kyokley2@gmail.com" # Adding a valid address is strongly recommended
