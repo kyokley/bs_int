@@ -10,6 +10,11 @@ from collections import namedtuple
 from io import StringIO
 from dateutil.parser import parse
 from openpyxl import load_workbook
+from openpyxl.chart import (
+    ScatterChart,
+    Reference,
+    Series,
+)
 
 from django.db import models
 from django.utils import timezone
@@ -27,6 +32,12 @@ PAR_VALUES_COL = 'C'
 PAR_VALUES_START_ROW = 19
 ZERO_RATES_COL = 'E'
 ZERO_RATES_START_ROW = 19
+
+CHART_MONTH_COL_INDEX = 10
+CHART_PAR_COL = 11
+CHART_ZERO_COL = 12
+CHART_MIN_ROW = 3
+CHART_MAX_ROW = 351
 
 Maturity = namedtuple('Maturity', 'name,months')
 
@@ -119,74 +130,86 @@ class TreasuryData(models.Model):
                     setattr(self, self._treasury_map[key], val)
                 break
         else:
-            logger.warning(f'Treasury data for {self.date} was not found')
+            raise Exception(f'Treasury data for {self.date} was not found')
 
     def save(self, *args, **kwargs):
         self._retrieve_treasury_data()
         super().save(*args, **kwargs)
 
-    def _par_rates(self):
+    def par_values(self):
         return [
             getattr(self, maturity.name)
             for maturity in self._maturity_order]
 
-#    def _zero_rates(self):
-#        zero_rates = {}
-#
-#        for idx, maturity in enumerate(self._maturity_order):
-#            logger.debug(f'Calculating {maturity.name}...')
-#
-#            par_rate = getattr(self, maturity.name) / 100
-#
-#            if idx == 0:
-#                zero_rates[maturity] = ((1 + par_rate / 2) ** (1 / maturity.months) - 1)
-#                # zero_rates[maturity] = par_rate * 100
-#                continue
-#
-#            discounts_sum = 0
-#            months = 0
-#            for m in self._effective_maturities(maturity):
-#                while months < m.months:
-#                    months += 6
-#                    discounts = (par_rate / 2) / (1 + zero_rates[m]) ** months
-#                    discounts_sum += discounts
-#
-#            remainder = 1 - discounts_sum
-#            zero_rate = (((1 + par_rate / 2) / remainder) ** (1 / maturity.months) - 1)
-#            zero_rates[maturity] = zero_rate
-#
-#        logger.debug(zero_rates)
-#        return zero_rates
-
-    def _zero_rates(self):
-        zero_rates = {}
+    def zero_rates(self):
+        zrs = {}
 
         for idx, maturity in enumerate(self._maturity_order):
             par_rate = getattr(self, maturity.name) / 100
             df = 1 / ((1 + (par_rate / 2)) ** (maturity.months / 6))
             zero_rate = 1/(df**(1/maturity.months)) - 1
-            zero_rates[maturity] = zero_rate
-        return zero_rates
-
-    def to_excel(self):
-        excel = Excel()
-        excel.populate_data(self._par_rates(),
-                            self._zero_rates())
-        return excel.stream()
+            zrs[maturity] = zero_rate
+        return zrs
 
 
 class Excel:
     def __init__(self):
         self.wb = load_workbook(filename=EXCEL_TEMPLATE_FILE)
+        self.ws = None
+
 
     def populate_data(self, par_values, zero_rates):
-        ws = self.wb.active
+        if self.ws is None:
+            raise Exception("Sheet must be added before populating data")
 
         for idx, par_val in enumerate(par_values, start=PAR_VALUES_START_ROW):
-            ws[f'{PAR_VALUES_COL}{idx}'] = par_val / 100
+            self.ws[f'{PAR_VALUES_COL}{idx}'] = par_val / 100
 
         for idx, zero_rate in enumerate(list(zero_rates.values()), start=ZERO_RATES_START_ROW):
-            ws[f'{ZERO_RATES_COL}{idx}'] = zero_rate
+            self.ws[f'{ZERO_RATES_COL}{idx}'] = zero_rate
+
+        chart = ScatterChart()
+        chart.x_axis.title = 'Future Monthly Periods'
+        chart.y_axis.title = 'Interest Rate'
+
+        x_values = Reference(self.ws,
+                             min_col=CHART_MONTH_COL_INDEX,
+                             min_row=CHART_MIN_ROW,
+                             max_row=CHART_MAX_ROW)
+
+        par_values = Reference(self.ws,
+                               min_col=CHART_PAR_COL,
+                               min_row=CHART_MIN_ROW,
+                               max_row=CHART_MAX_ROW)
+        par_series = Series(par_values,
+                            x_values,
+                            title='Par')
+
+        zero_values = Reference(self.ws,
+                                min_col=CHART_ZERO_COL,
+                                min_row=CHART_MIN_ROW,
+                                max_row=CHART_MAX_ROW)
+        zero_series = Series(zero_values,
+                             x_values,
+                             title='Zero')
+
+        chart.series.append(par_series)
+        chart.series.append(zero_series)
+
+        self.ws.add_chart(chart, "A2")
+
+
+    def add_sheet(self, treasury_data):
+        if self.ws is None:
+            self.ws = self.wb.active
+        else:
+            source = self.ws
+            self.ws = self.wb.copy_worksheet(source)
+
+        self.ws.sheet_view.showGridLines = False
+        self.ws.title = f'{treasury_data.date}'
+        self.populate_data(treasury_data.par_values(),
+                           treasury_data.zero_rates())
 
     def stream(self):
         output = BytesIO()

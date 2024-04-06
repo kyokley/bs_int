@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from rates.models import TreasuryData
+from rates.models import TreasuryData, Excel
 from django.http import HttpResponse
 
 # Register your models here.
@@ -25,10 +25,22 @@ class DataSetAdmin(admin.ModelAdmin):
     actions = ('download_excel',)
 
     def download_excel(self, request, queryset):
-        first = queryset.first()
-        output = first.to_excel()
+        excel = Excel()
 
-        filename = f'curve_{first.date.year}-{first.date.month}-{first.date.day}'
+        tdatas = list(queryset.order_by('date'))
+        for tdata in tdatas:
+            excel.add_sheet(tdata)
+
+        output = excel.stream()
+
+        if len(tdatas) == 1:
+            filename = f'curve_{tdata.date.year}-{tdata.date.month}-{tdata.date.day}'
+        else:
+            filename = (
+                f'curve_{tdatas[0].date.year}.{tdatas[0].date.month}.{tdatas[0].date.day}'
+                f'-{tdatas[-1].date.year}.{tdatas[-1].date.month}.{tdatas[-1].date.day}'
+            )
+
         response = HttpResponse(content_type="application/vnd.ms-excel")
         response["Content-Disposition"] = f"attachment; filename={filename}.xlsx"
         response.write(output.getvalue())
