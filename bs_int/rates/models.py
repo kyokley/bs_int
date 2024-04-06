@@ -182,10 +182,10 @@ class Excel:
     def populate_data(self, par_values, zero_rates):
         ws = self.wb.active
 
-        for idx, par_val in enumerate(par_values[1:], start=PAR_VALUES_START_ROW):
+        for idx, par_val in enumerate(par_values, start=PAR_VALUES_START_ROW):
             ws[f'{PAR_VALUES_COL}{idx}'] = par_val / 100
 
-        for idx, zero_rate in enumerate(list(zero_rates.values())[1:], start=ZERO_RATES_START_ROW):
+        for idx, zero_rate in enumerate(list(zero_rates.values()), start=ZERO_RATES_START_ROW):
             ws[f'{ZERO_RATES_COL}{idx}'] = zero_rate
 
     def stream(self):
