@@ -1,5 +1,6 @@
 DOCKER_COMPOSE_EXECUTABLE=$$(which docker-compose >/dev/null 2>&1 && echo 'docker-compose' || echo 'docker compose')
 PROD_COMPOSE_ARGS=-f docker-compose.yml -f docker-compose.prod.yml
+DEV_COMPOSE_ARGS=-f docker-compose.yml -f docker-compose.dev.yml
 
 help: ## This help
 	@grep -F "##" $(MAKEFILE_LIST) | grep -vF '@grep -F "##" $$(MAKEFILE_LIST)' | sed -r 's/(:).*##/\1/' | sort
@@ -11,19 +12,19 @@ build: ## Build prod-like container
 	docker build --tag=kyokley/bs_int .
 
 up: ## Bring up containers and daemonize
-	${DOCKER_COMPOSE_EXECUTABLE} up -d
-	${DOCKER_COMPOSE_EXECUTABLE} logs -f bs_int
+	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} up -d
+	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} logs -f bs_int
 
 down:
-	${DOCKER_COMPOSE_EXECUTABLE} down
+	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} down
 
 clear-db:
-	${DOCKER_COMPOSE_EXECUTABLE} down -v
+	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} down -v
 
 fresh: clear-db migrate up
 
 shell:
-	${DOCKER_COMPOSE_EXECUTABLE} run bs_int /bin/bash
+	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} run bs_int /bin/bash
 
 migrate:
 	${DOCKER_COMPOSE_EXECUTABLE} up -d
