@@ -1,4 +1,4 @@
-DOCKER_COMPOSE_EXECUTABLE=$$(which docker-compose >/dev/null 2>&1 && echo 'docker-compose' || echo '${DOCKER_COMPOSE_EXECUTABLE}')
+DOCKER_COMPOSE_EXECUTABLE=$$(which docker-compose >/dev/null 2>&1 && echo 'docker-compose' || echo 'docker compose')
 PROD_COMPOSE_ARGS=-f docker-compose.yml -f docker-compose.prod.yml
 
 help: ## This help
