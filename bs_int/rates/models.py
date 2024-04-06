@@ -2,10 +2,14 @@ import csv
 import requests
 import logging
 
+from io import BytesIO
+from pathlib import Path
+
 from collections import namedtuple
 
 from io import StringIO
 from dateutil.parser import parse
+from openpyxl import load_workbook
 
 from django.db import models
 from django.utils import timezone
@@ -17,6 +21,12 @@ CURRENT_MONTH_TREASURY_URL_TEMPLATE = 'https://home.treasury.gov/resource-center
 ANNUAL_TREASURY_URL_TEMPLATE = 'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/{year}/all?type=daily_treasury_yield_curve&field_tdr_date_value={year}&page&_format=csv'
 
 logger = logging.getLogger(__file__)
+
+EXCEL_TEMPLATE_FILE = Path(__file__).parent / 'quant_assessment_template.xlsx'
+PAR_VALUES_COL = 'C'
+PAR_VALUES_START_ROW = 19
+ZERO_RATES_COL = 'D'
+ZERO_RATES_START_ROW = 19
 
 Maturity = namedtuple('Maturity', 'name,months')
 
@@ -147,3 +157,29 @@ class TreasuryData(models.Model):
 
         logger.debug(zero_rates)
         return zero_rates
+
+    def to_excel(self):
+        excel = Excel()
+        excel.populate_data(self._par_rates(),
+                            self._zero_rates())
+        return excel.stream()
+
+
+class Excel:
+    def __init__(self):
+        self.wb = load_workbook(filename=EXCEL_TEMPLATE_FILE)
+
+    def populate_data(self, par_values, zero_rates):
+        ws = self.wb.active
+
+        for idx, par_val in enumerate(par_values, start=PAR_VALUES_START_ROW):
+            ws[f'{PAR_VALUES_COL}{idx}'] = par_val
+
+        for idx, zero_rate in enumerate(zero_rates, start=ZERO_RATES_START_ROW):
+            ws[f'{ZERO_RATES_COL}{idx}'] = zero_rate
+
+    def stream(self):
+        output = BytesIO()
+        self.wb.save(output)
+        output.seek(0)
+        return output
