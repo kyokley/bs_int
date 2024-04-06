@@ -2,10 +2,14 @@ import csv
 import requests
 import logging
 
+from io import BytesIO
+from pathlib import Path
+
 from collections import namedtuple
 
 from io import StringIO
 from dateutil.parser import parse
+from openpyxl import load_workbook
 
 from django.db import models
 from django.utils import timezone
@@ -17,6 +21,12 @@ CURRENT_MONTH_TREASURY_URL_TEMPLATE = 'https://home.treasury.gov/resource-center
 ANNUAL_TREASURY_URL_TEMPLATE = 'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/{year}/all?type=daily_treasury_yield_curve&field_tdr_date_value={year}&page&_format=csv'
 
 logger = logging.getLogger(__file__)
+
+EXCEL_TEMPLATE_FILE = Path(__file__).parent / 'quant_assessment_template.xlsx'
+PAR_VALUES_COL = 'C'
+PAR_VALUES_START_ROW = 19
+ZERO_RATES_COL = 'E'
+ZERO_RATES_START_ROW = 19
 
 Maturity = namedtuple('Maturity', 'name,months')
 
@@ -129,8 +139,8 @@ class TreasuryData(models.Model):
             par_rate = getattr(self, maturity.name) / 100
 
             if idx == 0:
-                # zero_rates[maturity] = (1 + par_rate / 2) ** (1 / maturity.months) - 1
-                zero_rates[maturity] = par_rate
+                zero_rates[maturity] = ((1 + par_rate / 2) ** (1 / maturity.months) - 1)
+                # zero_rates[maturity] = par_rate * 100
                 continue
 
             discounts_sum = 0
@@ -143,7 +153,33 @@ class TreasuryData(models.Model):
 
             remainder = 1 - discounts_sum
             zero_rate = (((1 + par_rate / 2) / remainder) ** (1 / maturity.months) - 1)
-            zero_rates[maturity] = zero_rate * 100
+            zero_rates[maturity] = zero_rate
 
         logger.debug(zero_rates)
         return zero_rates
+
+    def to_excel(self):
+        excel = Excel()
+        excel.populate_data(self._par_rates(),
+                            self._zero_rates())
+        return excel.stream()
+
+
+class Excel:
+    def __init__(self):
+        self.wb = load_workbook(filename=EXCEL_TEMPLATE_FILE)
+
+    def populate_data(self, par_values, zero_rates):
+        ws = self.wb.active
+
+        for idx, par_val in enumerate(par_values[1:], start=PAR_VALUES_START_ROW):
+            ws[f'{PAR_VALUES_COL}{idx}'] = par_val / 100
+
+        for idx, zero_rate in enumerate(list(zero_rates.values())[1:], start=ZERO_RATES_START_ROW):
+            ws[f'{ZERO_RATES_COL}{idx}'] = zero_rate
+
+    def stream(self):
+        output = BytesIO()
+        self.wb.save(output)
+        output.seek(0)
+        return output
