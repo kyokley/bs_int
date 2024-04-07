@@ -1,4 +1,7 @@
 services:
+  postgres:
+    restart: unless-stopped
+
   nginx:
     image: nginx:1.25-alpine
     ports:
@@ -12,6 +15,7 @@ services:
       - image-data:/images-dir
     networks:
       - bs_int-backend
+    restart: unless-stopped
 
   certbot:
     image: certbot/certbot
@@ -22,3 +26,4 @@ services:
   bs_int:
     environment:
       - DJANGO_SETTINGS_MODULE=bs_int.site.prod_settings
+    restart: unless-stopped
