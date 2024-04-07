@@ -24,6 +24,8 @@ pytest-django = "^4.8.0"
 pdbpp = "^0.10.3"
 django-silk = "^5.1.0"
 black = "^24.3.0"
+pytest = "^8.1.1"
+pytest-mock = "^3.14.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -32,3 +34,10 @@ build-backend = "poetry.core.masonry.api"
 [tool.ruff]
 select = ["E", "F"]
 ignore = ["E501"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "bs_int.site.settings"
+python_files = ["tests.py",
+                "test_*.py",
+                "*_tests.py",
+                ]

@@ -114,7 +114,6 @@ class TreasuryData(models.Model):
 
     def image_tag(self):
         return mark_safe(f'<img src="{self.chart.url}" width="600" height="400" />')
-
     image_tag.short_description = 'Chart'
 
     @classmethod
