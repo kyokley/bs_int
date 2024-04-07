@@ -26,6 +26,7 @@ django-silk = "^5.1.0"
 black = "^24.3.0"
 pytest = "^8.1.1"
 pytest-mock = "^3.14.0"
+pytest-socket = "^0.7.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -41,3 +42,4 @@ python_files = ["tests.py",
                 "test_*.py",
                 "*_tests.py",
                 ]
+addopts = "--disable-socket"
