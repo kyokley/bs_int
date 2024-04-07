@@ -2,6 +2,7 @@ import csv
 import requests
 import logging
 import math
+import matplotlib.pyplot as plt
 
 from io import BytesIO, StringIO
 from pathlib import Path
@@ -16,8 +17,10 @@ from openpyxl.chart import (
     Series,
 )
 
+from django.core.files.base import ContentFile
 from django.db import models
 from django.utils import timezone
+from django.utils.html import mark_safe
 
 REQUEST_TIMEOUT = 60
 
@@ -73,20 +76,26 @@ class TreasuryData(models.Model):
     date = models.DateField(null=False,
                             blank=False)
 
-    one_month = models.FloatField(null=True, blank=False)
-    two_month = models.FloatField(null=True, blank=False)
-    three_month = models.FloatField(null=True, blank=False)
-    four_month = models.FloatField(null=True, blank=False)
-    six_month = models.FloatField(null=True, blank=False)
+    one_month = models.FloatField(null=True, blank=False, editable=False)
+    two_month = models.FloatField(null=True, blank=False, editable=False)
+    three_month = models.FloatField(null=True, blank=False, editable=False)
+    four_month = models.FloatField(null=True, blank=False, editable=False)
+    six_month = models.FloatField(null=True, blank=False, editable=False)
 
-    one_year = models.FloatField(null=True, blank=False)
-    two_year = models.FloatField(null=True, blank=False)
-    three_year = models.FloatField(null=True, blank=False)
-    five_year = models.FloatField(null=True, blank=False)
-    seven_year = models.FloatField(null=True, blank=False)
-    ten_year = models.FloatField(null=True, blank=False)
-    twenty_year = models.FloatField(null=True, blank=False)
-    thirty_year = models.FloatField(null=True, blank=False)
+    one_year = models.FloatField(null=False, blank=False)
+    two_year = models.FloatField(null=False, blank=False)
+    three_year = models.FloatField(null=False, blank=False)
+    five_year = models.FloatField(null=False, blank=False)
+    seven_year = models.FloatField(null=False, blank=False)
+    ten_year = models.FloatField(null=False, blank=False)
+    twenty_year = models.FloatField(null=False, blank=False)
+    thirty_year = models.FloatField(null=False, blank=False)
+
+    chart = models.ImageField(null=True,
+                              blank=True,
+                              editable=False,
+                              upload_to="uploads/%Y/%m/%d/",
+                              )
 
     class Meta:
         constraints = [
@@ -99,6 +108,11 @@ class TreasuryData(models.Model):
 
     def __repr__(self):
         return str(self)
+
+    def image_tag(self):
+        return mark_safe(f'<img src="{self.chart.url}" width="600" height="300" />')
+
+    image_tag.short_description = 'Chart'
 
     @classmethod
     def _effective_maturities(cls, maturity):
@@ -128,10 +142,19 @@ class TreasuryData(models.Model):
 
             if data_date.date() == self.date:
                 for key, val in row.items():
-                    setattr(self, self._treasury_map[key], val)
+                    try:
+                        if val != '':
+                            val = float(val)
+                        else:
+                            val = None
+                        setattr(self, self._treasury_map[key], val)
+                    except Exception as e:
+                        raise Exception(f'Got error getting {key} treasury data for {self.date}: {e}')
                 break
         else:
             raise Exception(f'Treasury data for {self.date} was not found')
+
+        self.generate_chart()
 
     def save(self, *args, **kwargs):
         self._retrieve_treasury_data()
@@ -237,6 +260,28 @@ class TreasuryData(models.Model):
             )
         output.seek(0)
         return output
+
+    def generate_chart(self):
+        io = BytesIO()
+
+        data = self.get_row_data()
+        x_values = [x.months
+                    for x in data]
+        y_values = [y.zero * 100
+                    for y in data]
+        plt.scatter(x_values,
+                    y_values)
+        plt.title('Continuous Monthly Zero Rates')
+        plt.xlabel('Months')
+        plt.ylabel('Interest Rates (%)')
+        plt.grid(True)
+        plt.savefig(io)
+        self.chart.save(
+            f'{self.date.year}-{self.date.month}-{self.date.day}.png',
+            ContentFile(io.getvalue()),
+            save=False,
+        )
+        plt.close()
 
 
 class Excel:

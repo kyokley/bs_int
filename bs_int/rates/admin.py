@@ -11,11 +11,6 @@ from django.http import HttpResponse
 class DataSetAdmin(admin.ModelAdmin):
     ordering = ('-date',)
     readonly_fields = (
-        'one_month',
-        'two_month',
-        'three_month',
-        'four_month',
-        'six_month',
         'one_year',
         'two_year',
         'three_year',
@@ -24,6 +19,7 @@ class DataSetAdmin(admin.ModelAdmin):
         'ten_year',
         'twenty_year',
         'thirty_year',
+        'image_tag',
     )
     actions = ('download_excel',
                'download_csv',
