@@ -44,3 +44,21 @@ pytest:
 	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} run --rm bs_int pytest
 
 tests: pytest
+
+check-migrations: build ## Check for missing migrations
+	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} run --rm bs_int /venv/bin/python manage.py makemigrations --check
+
+autoformat:
+	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} run --rm --no-deps mediaviewer /venv/bin/black .
+	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} run --rm --no-deps mediaviewer /venv/bin/isort .
+
+check-black:
+	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} run --rm --no-deps bs_int /venv/bin/black --check .
+
+check-ruff:
+	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} run --rm --no-deps bs_int /venv/bin/ruff check .
+
+check-isort:
+	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} run --rm --no-deps bs_int /venv/bin/isort --check .
+
+checks: check-migrations check-ruff check-black check-isort

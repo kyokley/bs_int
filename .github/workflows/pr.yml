@@ -12,3 +12,15 @@ jobs:
 
       - name: Run tests
         run: make tests
+
+      - name: Check migrations
+        run: make check-migrations
+
+      - name: Check Ruff linting
+        run: make check-ruff
+
+      - name: Check Black linting
+        run: make check-black
+
+      - name: Check isort linting
+        run: make check-isort
