@@ -36,11 +36,14 @@ PAR_VALUES_START_ROW = 19
 ZERO_RATES_COL = 'E'
 ZERO_RATES_START_ROW = 19
 
+MINI_CHART_MONTH_COL_INDEX = 2
 CHART_MONTH_COL_INDEX = 10
-CHART_PAR_COL = 11
+CHART_PAR_COL = 3
 CHART_ZERO_COL = 12
 CHART_MIN_ROW = 3
 CHART_MAX_ROW = 351
+MINI_CHART_MIN_ROW = 19
+MINI_CHART_MAX_ROW = 26
 
 Maturity = namedtuple('Maturity', 'name,months')
 DataRow = namedtuple('DataRow', 'months,par,zero,zero_rate,df,ln_df')
@@ -304,25 +307,29 @@ class Excel:
         chart.x_axis.title = 'Future Monthly Periods'
         chart.y_axis.title = 'Interest Rate'
 
-        x_values = Reference(self.ws,
-                             min_col=CHART_MONTH_COL_INDEX,
-                             min_row=CHART_MIN_ROW,
-                             max_row=CHART_MAX_ROW)
+        par_x_values = Reference(self.ws,
+                                 min_col=MINI_CHART_MONTH_COL_INDEX,
+                                 min_row=MINI_CHART_MIN_ROW,
+                                 max_row=MINI_CHART_MAX_ROW)
 
         par_values = Reference(self.ws,
                                min_col=CHART_PAR_COL,
-                               min_row=CHART_MIN_ROW,
-                               max_row=CHART_MAX_ROW)
+                               min_row=MINI_CHART_MIN_ROW,
+                               max_row=MINI_CHART_MAX_ROW)
         par_series = Series(par_values,
-                            x_values,
+                            par_x_values,
                             title='Par')
 
+        zero_x_values = Reference(self.ws,
+                                  min_col=CHART_MONTH_COL_INDEX,
+                                  min_row=CHART_MIN_ROW,
+                                  max_row=CHART_MAX_ROW)
         zero_values = Reference(self.ws,
                                 min_col=CHART_ZERO_COL,
                                 min_row=CHART_MIN_ROW,
                                 max_row=CHART_MAX_ROW)
         zero_series = Series(zero_values,
-                             x_values,
+                             zero_x_values,
                              title='Zero')
 
         chart.series.append(par_series)
