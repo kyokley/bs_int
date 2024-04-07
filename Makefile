@@ -49,8 +49,8 @@ check-migrations: build ## Check for missing migrations
 	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} run --rm bs_int /venv/bin/python manage.py makemigrations --check
 
 autoformat:
-	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} run --rm --no-deps mediaviewer /venv/bin/black .
-	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} run --rm --no-deps mediaviewer /venv/bin/isort .
+	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} run --rm --no-deps bs_int /venv/bin/black .
+	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} run --rm --no-deps bs_int /venv/bin/isort .
 
 check-black:
 	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} run --rm --no-deps bs_int /venv/bin/black --check .
