@@ -95,12 +95,18 @@ class DataSetAdmin(admin.ModelAdmin):
         extra_context['download_csv_button'] = True
         return self.changeform_view(request, object_id, form_url, extra_context)
 
-    def response_change(self, request, obj):
-        if "_download_excel" in request.POST:
-            queryset = self.get_queryset(request).filter(pk=obj.pk)
-            return self.download_excel(request, queryset)
+    def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
+        if object_id is not None:
+            if "_download_excel" in request.POST:
+                queryset = self.get_queryset(request).filter(pk=object_id)
+                return self.download_excel(request, queryset)
 
-        if "_download_csv" in request.POST:
-            queryset = self.get_queryset(request).filter(pk=obj.pk)
-            return self.download_csv(request, queryset)
-        return super().response_change(request, obj)
+            if "_download_csv" in request.POST:
+                queryset = self.get_queryset(request).filter(pk=object_id)
+                return self.download_csv(request, queryset)
+        return admin.ModelAdmin.changeform_view(
+            self, request,
+            object_id=object_id,
+            form_url=form_url,
+            extra_context=extra_context,
+        )
