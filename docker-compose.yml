@@ -30,11 +30,13 @@ services:
         volumes:
           - .:/code
           - bs_int-data:/tmp/static
+          - image-data:/images-dir
 
 # Persistent Volumes
 volumes:
   postgres-data:
   bs_int-data:
+  image-data:
 
 networks:
     bs_int-backend:

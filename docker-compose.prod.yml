@@ -9,6 +9,7 @@ services:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
       - bs_int-data:/tmp/static
+      - image-data:/images-dir
     networks:
       - bs_int-backend
 
