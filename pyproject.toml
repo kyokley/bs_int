@@ -15,6 +15,7 @@ python-dateutil = "^2.9.0.post0"
 openpyxl = "^3.1.2"
 pillow = "^10.3.0"
 matplotlib = "^3.8.4"
+uwsgi = "^2.0.24"
 
 
 [tool.poetry.group.dev.dependencies]

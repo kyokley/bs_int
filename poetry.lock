@@ -1287,6 +1287,16 @@ socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
 zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
+name = "uwsgi"
+version = "2.0.24"
+description = "The uWSGI server"
+optional = false
+python-versions = "*"
+files = [
+    {file = "uwsgi-2.0.24.tar.gz", hash = "sha256:77b6dd5cd633f4ae87ee393f7701f617736815499407376e78f3d16467523afe"},
+]
+
+[[package]]
 name = "wcwidth"
 version = "0.2.13"
 description = "Measures the displayed width of unicode strings in a terminal"
@@ -1317,4 +1327,4 @@ test = ["pytest"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "5f0fb50f0d3fb6c651a29b162b2deeea1c6ea73ee53e4f69a4d67252d494ebc0"
+content-hash = "afaa57a6d14a011697148f54e0d226c3846f4ff953cbf9b03bc712afc507b3a5"
