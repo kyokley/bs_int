@@ -1,13 +1,13 @@
 import csv
 import requests
 import logging
+import math
 
-from io import BytesIO
+from io import BytesIO, StringIO
 from pathlib import Path
 
 from collections import namedtuple
 
-from io import StringIO
 from dateutil.parser import parse
 from openpyxl import load_workbook
 from openpyxl.chart import (
@@ -40,6 +40,7 @@ CHART_MIN_ROW = 3
 CHART_MAX_ROW = 351
 
 Maturity = namedtuple('Maturity', 'name,months')
+DataRow = namedtuple('DataRow', 'months,par,zero,zero_rate,df,ln_df')
 
 class TreasuryData(models.Model):
     _treasury_map = {'1 Mo': 'one_month',
@@ -150,6 +151,92 @@ class TreasuryData(models.Model):
             zero_rate = 1/(df**(1/maturity.months)) - 1
             zrs[maturity] = zero_rate
         return zrs
+
+    def get_row_data(self):
+        key_data = {}
+        zero_rates = self.zero_rates()
+
+        for idx, maturity in enumerate(self._maturity_order):
+            months = maturity.months
+            par = getattr(self, maturity.name) / 100
+            zero_rate = zero_rates[maturity]
+            zero = (1 + zero_rate) ** 12 - 1
+            df = 1 / (1 + zero_rate) ** months
+            ln_df = math.log(df)
+
+            key_data[maturity.months] = DataRow(
+                months=months,
+                par=par,
+                zero=zero,
+                zero_rate=zero_rate,
+                df=df,
+                ln_df=ln_df,
+            )
+
+        key_slopes = []
+        key_data_list = list(key_data.values())
+        for idx in range(1, len(key_data)):
+            curr = key_data_list[idx]
+            prev = key_data_list[idx - 1]
+
+            slope = (curr.ln_df - prev.ln_df) / (curr.months - prev.months)
+            key_slopes.append(slope)
+
+        data = []
+        key_row = None
+        key_slope = None
+        for months in range(12, 361):
+            if months in key_data:
+                key_row = key_data[months]
+                if key_slopes:
+                    key_slope = key_slopes.pop(0)
+                data.append(key_row)
+                continue
+
+            ln_df = key_row.ln_df + key_slope * (months - key_row.months)
+            df = math.exp(ln_df)
+            par = ''
+            zero_rate = (1 / df) ** (1 / months) - 1
+            zero = (1 + zero_rate) ** 12 - 1
+
+            data.append(DataRow(
+                months=months,
+                par=par,
+                zero=zero,
+                zero_rate=zero_rate,
+                df=df,
+                ln_df=ln_df,
+            ))
+        return data
+
+    def to_csv(self):
+        output = StringIO()
+        csv_writer = csv.writer(output)
+
+        csv_writer.writerow(
+            [
+                'Months',
+                'Par',
+                'Zero',
+                '',
+                'DF',
+                'ln(DF)',
+            ]
+        )
+
+        for data in self.get_row_data():
+            csv_writer.writerow(
+                [
+                    data.months,
+                    data.par,
+                    data.zero,
+                    data.zero_rate,
+                    data.df,
+                    data.ln_df,
+                ]
+            )
+        output.seek(0)
+        return output
 
 
 class Excel:
