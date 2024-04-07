@@ -27,3 +27,5 @@ urlpatterns += [path('silk/', include('silk.urls', namespace='silk'))]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 admin.site.site_header = 'Revantage Yield Curve Calculator'
+admin.site.site_title = 'BS Int Site Admin'
+admin.site.site_url = None

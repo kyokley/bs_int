@@ -25,6 +25,8 @@ class DataSetAdmin(admin.ModelAdmin):
                'download_csv',
                )
 
+    view_on_site = False
+
     @admin.action(description='Download CSV')
     def download_csv(self, request, queryset):
         tdatas = list(queryset.order_by('date'))
