@@ -42,9 +42,12 @@ RUN apt-get update && apt-get install -y \
 COPY ./pdbrc.py /root/.pdbrc.py
 
 WORKDIR /code
+COPY poetry.lock pyproject.toml /code/
+RUN $POETRY_VENV/bin/pip install poetry && \
+        $POETRY_VENV/bin/poetry install
+
 COPY . /code
 
-RUN $POETRY_VENV/bin/pip install poetry && \
-        $POETRY_VENV/bin/poetry install && \
-        $VIRTUAL_ENV/bin/pip install -e .
+RUN $VIRTUAL_ENV/bin/pip install -e .
+
 WORKDIR /code/bs_int
