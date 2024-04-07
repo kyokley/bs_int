@@ -39,3 +39,6 @@ prod-up: migrate
 	${DOCKER_COMPOSE_EXECUTABLE} ${PROD_COMPOSE_ARGS} logs -f
 
 prod-restart: down prod-up
+
+pytest:
+	${DOCKER_COMPOSE_EXECUTABLE} ${DEV_COMPOSE_ARGS} run --rm bs_int pytest
