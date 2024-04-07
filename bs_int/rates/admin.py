@@ -25,6 +25,7 @@ class DataSetAdmin(admin.ModelAdmin):
                'download_csv',
                )
 
+    @admin.action(description='Download CSV')
     def download_csv(self, request, queryset):
         tdatas = list(queryset.order_by('date'))
 
@@ -71,6 +72,7 @@ class DataSetAdmin(admin.ModelAdmin):
 
         return filename
 
+    @admin.action(description='Download Excel')
     def download_excel(self, request, queryset):
         excel = Excel()
 
@@ -86,3 +88,19 @@ class DataSetAdmin(admin.ModelAdmin):
         response["Content-Disposition"] = f"attachment; filename={filename}.xlsx"
         response.write(output.getvalue())
         return response
+
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['download_excel_button'] = True
+        extra_context['download_csv_button'] = True
+        return self.changeform_view(request, object_id, form_url, extra_context)
+
+    def response_change(self, request, obj):
+        if "_download_excel" in request.POST:
+            queryset = self.get_queryset(request).filter(pk=obj.pk)
+            return self.download_excel(request, queryset)
+
+        if "_download_csv" in request.POST:
+            queryset = self.get_queryset(request).filter(pk=obj.pk)
+            return self.download_csv(request, queryset)
+        return super().response_change(request, obj)
