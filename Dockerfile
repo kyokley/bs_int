@@ -42,7 +42,7 @@ RUN apt-get update && apt-get install -y \
 COPY ./pdbrc.py /root/.pdbrc.py
 
 WORKDIR /code
-COPY poetry.lock pyproject.toml /code/
+COPY poetry.lock pyproject.toml README.md /code/
 RUN $POETRY_VENV/bin/pip install poetry && \
         $POETRY_VENV/bin/poetry install
 
