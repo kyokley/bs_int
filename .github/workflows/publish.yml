@@ -1,4 +1,4 @@
-name: 'publish images'
+name: 'Build and Run Checks'
 
 on:
   push:
