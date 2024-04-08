@@ -12,6 +12,7 @@ from django.core.files.base import ContentFile
 from django.db import models
 from django.utils import timezone
 from django.utils.html import mark_safe
+from django.core.exceptions import ValidationError
 from openpyxl import load_workbook
 from openpyxl.chart import Reference, ScatterChart, Series
 
@@ -149,12 +150,12 @@ class TreasuryData(models.Model):
                             val = None
                         setattr(self, self._treasury_map[key], val)
                     except Exception as e:
-                        raise Exception(
+                        raise ValidationError(
                             f"Got error getting {key} treasury data for {self.date}: {e}"
                         )
                 break
         else:
-            raise Exception(f"Treasury data for {self.date} was not found")
+            raise ValidationError(f"Treasury data for {self.date} was not found")
 
         self.generate_chart()
 

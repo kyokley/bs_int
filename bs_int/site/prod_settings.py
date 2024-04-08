@@ -5,3 +5,5 @@ CSRF_TRUSTED_ORIGINS = ["https://comet.dyndns.info"]
 
 MEDIA_ROOT = "/images-dir"
 MEDIA_URL = "/images/"
+
+DEBUG = False
