@@ -8,11 +8,11 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import requests
 from dateutil.parser import parse
+from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.db import models
 from django.utils import timezone
 from django.utils.html import mark_safe
-from django.core.exceptions import ValidationError
 from openpyxl import load_workbook
 from openpyxl.chart import Reference, ScatterChart, Series
 
@@ -120,6 +120,9 @@ class TreasuryData(models.Model):
                 yield m
 
     def _retrieve_treasury_data(self):
+        if not self._required_fields_missing():
+            return
+
         current_date = timezone.now().date()
 
         if (
@@ -159,9 +162,33 @@ class TreasuryData(models.Model):
 
         self.generate_chart()
 
+    def _required_fields_missing(self):
+        return any((getattr(self, x.name, None) is None for x in self._maturity_order))
+
     def save(self, *args, **kwargs):
         self._retrieve_treasury_data()
         super().save(*args, **kwargs)
+
+    def clean(self, *args, **kwargs):
+        if self.pk is not None:
+            stored_date = self.__class__.objects.filter(pk=self.pk).values_list(
+                "date", flat=True
+            )[0]
+            if self.date != stored_date:
+                raise ValidationError(
+                    "Modifying the date of an existing object is not allowed. "
+                    "Please create a new TreasuryData object."
+                )
+
+        if self.__class__.objects.filter(date=self.date).exclude(pk=self.pk).exists():
+            raise ValidationError(f"Treasury data for {self.date} already exists.")
+
+        try:
+            self._retrieve_treasury_data()
+        except ValidationError:
+            raise
+        except Exception as e:
+            raise ValidationError(e)
 
     def par_values(self):
         return [getattr(self, maturity.name) for maturity in self._maturity_order]
