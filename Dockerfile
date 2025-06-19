@@ -3,9 +3,10 @@ FROM python:3.12-slim AS base
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV UV_PROJECT_DIR=/code
+ENV UV_PROJECT_ENVIRONMENT=/venv
 ENV PYTHONPATH=.
 
-ENV VIRTUAL_ENV=${UV_PROJECT_DIR}/.venv
+ENV VIRTUAL_ENV=${UV_PROJECT_ENVIRONMENT}
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 WORKDIR ${UV_PROJECT_DIR}
@@ -24,6 +25,8 @@ RUN apt-get update && apt-get install -y \
 
 COPY uv.lock pyproject.toml ${UV_PROJECT_DIR}/
 
-RUN uv sync --project ${VIRTUAL_ENV}
+RUN uv sync --project ${UV_PROJECT_DIR}
 
 COPY . ${UV_PROJECT_DIR}
+
+CMD ["uv", "run", "python", "bs_int/manage.py", "runserver"]
