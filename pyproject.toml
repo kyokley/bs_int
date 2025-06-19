@@ -1,50 +1,30 @@
-[tool.poetry]
+[project]
 name = "bs-int"
 version = "0.1.0"
-description = ""
-authors = ["Kevin Yokley <kyokley2@gmail.com>"]
+description = "Add your description here"
 readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "django==5.0.3",
+    "django-extensions>=4.1",
+    "gunicorn>=23.0.0",
+    "matplotlib>=3.10.3",
+    "openpyxl>=3.1.5",
+    "pillow>=11.2.1",
+    "psycopg2",
+    "python-dateutil>=2.9.0.post0",
+    "requests>=2.32.4",
+]
 
-[tool.poetry.dependencies]
-python = "^3.11"
-django = "^5.0.3"
-requests = "^2.31.0"
-psycopg2 = "^2.9.9"
-django-extensions = "^3.2.3"
-python-dateutil = "^2.9.0.post0"
-openpyxl = "^3.1.2"
-pillow = "^10.3.0"
-matplotlib = "^3.8.4"
-uwsgi = "^2.0.24"
-
-
-[tool.poetry.group.dev.dependencies]
-bpython = "^0.24"
-pytest-django = "^4.8.0"
-pdbpp = "^0.10.3"
-django-silk = "^5.1.0"
-black = "^24.3.0"
-pytest = "^8.1.1"
-pytest-mock = "^3.14.0"
-pytest-socket = "^0.7.0"
-isort = "^5.13.2"
-ruff = "^0.3.5"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.ruff.lint]
-select = ["E", "F"]
-ignore = ["E501"]
-
-[tool.isort]
-profile = "black"
-
-[tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "bs_int.site.settings"
-python_files = ["tests.py",
-                "test_*.py",
-                "*_tests.py",
-                ]
-addopts = "--disable-socket"
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "bpython>=0.25",
+    "django-silk>=5.4.0",
+    "isort>=6.0.1",
+    "pdbpp>=0.11.6",
+    "pytest>=8.4.1",
+    "pytest-django>=4.11.1",
+    "pytest-mock>=3.14.1",
+    "pytest-socket>=0.7.0",
+]
