@@ -1,7 +1,7 @@
 [project]
 name = "bs-int"
 version = "0.1.0"
-description = "Add your description here"
+description = "Zero Yield Curve Calculator"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
