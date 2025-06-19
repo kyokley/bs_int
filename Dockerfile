@@ -9,6 +9,7 @@ ENV PYTHONPATH=.
 ENV VIRTUAL_ENV=${UV_PROJECT_ENVIRONMENT}
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
+WORKDIR /tmp/media_root
 WORKDIR ${UV_PROJECT_DIR}
 
 # Install required packages and remove the apt packages cache when done.

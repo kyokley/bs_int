@@ -40,6 +40,16 @@ in
         then "--network=host"
         else "";
     in "docker build ${host} --tag=kyokley/bs_int .";
+    init.exec = ''
+      $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS down -v --remove-orphans
+      $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS up -d
+      $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS exec bs_int uv run python bs_int/manage.py migrate
+      $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS exec bs_int uv run python bs_int/manage.py initdata
+    '';
+    attach.exec = ''
+      $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS up -d
+      $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS attach bs_int
+    '';
     up.exec = ''
       $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS up -d
       $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS logs -f bs_int
