@@ -29,8 +29,11 @@ dev = [
     "pytest-socket>=0.7.0",
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/bs_int"]
+
 [project.scripts]
-bs-int = "bs_int:main"
+bs-int = "bs_int:manage.main"
 
 [build-system]
 requires = ["hatchling"]
