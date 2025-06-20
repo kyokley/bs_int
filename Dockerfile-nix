@@ -25,4 +25,4 @@ WORKDIR /bs_int
 # Copy /nix/store
 COPY --from=builder /tmp/nix-store-closure /nix/store
 COPY --from=builder /tmp/build/result /bs_int
-CMD ["uv", "run", "python", "bs_int/manage.py", "runserver"]
+CMD ["/bs_int/bin/bs-int", "runserver"]

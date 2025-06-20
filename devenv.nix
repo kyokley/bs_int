@@ -53,9 +53,10 @@ in
     in "docker build ${host} -f Dockerfile-nix --tag=kyokley/bs_int-nix .";
     init.exec = ''
       $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS down -v --remove-orphans
-      $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS up -d
-      $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS exec bs_int uv run python bs_int/manage.py migrate
-      $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS exec bs_int uv run python bs_int/manage.py initdata
+      $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS up -d postgres
+      sleep 3
+      $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS run --rm bs_int /bs_int/bin/bs-int migrate
+      $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS run --rm bs_int /bs_int/bin/bs-int initdata
     '';
     attach.exec = ''
       $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS up -d

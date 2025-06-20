@@ -4,4 +4,4 @@ services:
     build:
       dockerfile: ./Dockerfile-nix
     command:
-      django-collect-static && django-migrate && django-start
+      /bs_int/bin/bs-int runserver 0.0.0.0:8000
