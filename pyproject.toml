@@ -28,3 +28,10 @@ dev = [
     "pytest-mock>=3.14.1",
     "pytest-socket>=0.7.0",
 ]
+
+[project.scripts]
+bs-int = "bs_int:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
