@@ -61,6 +61,16 @@
           (thisProjectAsNixPkg.pname + "-env")
           workspace.deps.all; # Uses deps from pyproject.toml [project.dependencies]
 
+        django-start = pkgs.writeShellScriptBin "django-start" ''
+          ${noDevPythonEnv}/bin/uv run python bs_int/manage.py runserver
+        '';
+        django-collect-static = pkgs.writeShellScriptBin "django-collect-static" ''
+          ${noDevPythonEnv}/bin/uv run python bs_int/manage.py collectstatic --no-input
+        '';
+        django-migrate = pkgs.writeShellScriptBin "django-migrate" ''
+          ${noDevPythonEnv}/bin/uv run python bs_int/manage.py migrate
+        '';
+
       in
       {
         # Development Shell
@@ -79,11 +89,18 @@
           buildInputs = [ noDevPythonEnv ]; # Runtime Python environment
 
           installPhase = ''
-            # mkdir -p $out/bin
-            # cp ${noDevPythonEnv}/bin/bs_int $out/bin/${thisProjectAsNixPkg.pname}-script
-            # chmod +x $out/bin/${thisProjectAsNixPkg.pname}-script
-            # makeWrapper ${noDevPythonEnv}/bin/python $out/bin/${thisProjectAsNixPkg.pname} \
-            #   --add-flags $out/bin/${thisProjectAsNixPkg.pname}-script
+            mkdir -p $out/bin
+            # cp ${noDevPythonEnv}/bin/python $out/bin/${thisProjectAsNixPkg.pname}-script
+
+            cp ${django-start}/bin/django-start $out/bin/django-start-script
+            chmod +x $out/bin/django-start-script
+            cp ${django-collect-static}/bin/django-collect-static $out/bin/django-collect-static-script
+            chmod +x $out/bin/django-collect-static-script
+            cp ${django-migrate}/bin/django-migrate $out/bin/django-migrate-script
+            chmod +x $out/bin/django-migrate-script
+
+            makeWrapper ${noDevPythonEnv}/bin/python $out/bin/${thisProjectAsNixPkg.pname} \
+              --add-flags $out/bin/${thisProjectAsNixPkg.pname}-script
           '';
         };
         packages.${thisProjectAsNixPkg.pname} = self.packages.${system}.default;
@@ -91,7 +108,7 @@
         # App for `nix run`
         apps.default = {
           type = "app";
-          program = "${self.packages.${system}.default}/bin/python";
+          program = "${self.packages.${system}.default}/bin/django-start";
         };
         apps.${thisProjectAsNixPkg.pname} = self.apps.${system}.default;
       }

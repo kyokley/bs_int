@@ -1,6 +1,7 @@
 { pkgs, lib, config, inputs, ... }:
 let
   USE_HOST_NET = 1;
+  USE_NIX = 1;
 in
 {
   # https://devenv.sh/basics/
@@ -8,7 +9,11 @@ in
     GREET = "BS INT";
     DOCKER_COMPOSE_EXECUTABLE = "docker compose";
     PROD_COMPOSE_ARGS = "-f docker-compose.yml -f docker-compose.prod.yml";
-    DEV_COMPOSE_ARGS = "-f docker-compose.yml -f docker-compose.dev.yml";
+    DEV_COMPOSE_ARGS = let
+      nix-config = if USE_NIX == 1
+      then "-f docker-compose.nix.yml"
+      else "";
+    in "-f docker-compose.yml -f docker-compose.dev.yml ${nix-config}";
   };
 
   # https://devenv.sh/packages/
@@ -40,6 +45,12 @@ in
         then "--network=host"
         else "";
     in "docker build ${host} --tag=kyokley/bs_int .";
+    build-nix.exec = let
+      host =
+        if USE_HOST_NET == 1
+        then "--network=host"
+        else "";
+    in "docker build ${host} -f Dockerfile-nix --tag=kyokley/bs_int-nix .";
     init.exec = ''
       $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS down -v --remove-orphans
       $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS up -d
