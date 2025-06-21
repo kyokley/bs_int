@@ -1,7 +1,7 @@
 { pkgs, lib, config, inputs, ... }:
 let
   USE_HOST_NET = 1;
-  USE_NIX = 1;
+  USE_NIX = 0;
 in
 {
   # https://devenv.sh/basics/
@@ -13,7 +13,10 @@ in
       nix-config = if USE_NIX == 1
       then "-f docker-compose.nix.yml"
       else "";
-    in "-f docker-compose.yml -f docker-compose.dev.yml ${nix-config}";
+      host-config = if USE_HOST_NET == 1
+      then "-f docker-compose.host.yml"
+      else "";
+    in "-f docker-compose.yml -f docker-compose.dev.yml ${nix-config} ${host-config}";
   };
 
   # https://devenv.sh/packages/
@@ -39,24 +42,15 @@ in
 
   # https://devenv.sh/scripts/
   scripts = {
-    build.exec = let
-      host =
-        if USE_HOST_NET == 1
-        then "--network=host"
-        else "";
-    in "docker build ${host} --tag=kyokley/bs_int .";
-    build-nix.exec = let
-      host =
-        if USE_HOST_NET == 1
-        then "--network=host"
-        else "";
-    in "docker build ${host} -f Dockerfile-nix --tag=kyokley/bs_int-nix .";
+    build.exec = ''
+      $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS build bs_int
+    '';
     init.exec = ''
       $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS down -v --remove-orphans
       $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS up -d postgres
       sleep 3
-      $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS run --rm bs_int /bs_int/bin/bs-int migrate
-      $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS run --rm bs_int /bs_int/bin/bs-int initdata
+      $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS run --rm bs_int /venv/bin/bs-int migrate
+      $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS run --rm bs_int /venv/bin/bs-int initdata
     '';
     attach.exec = ''
       $DOCKER_COMPOSE_EXECUTABLE $DEV_COMPOSE_ARGS up -d

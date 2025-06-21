@@ -3,5 +3,3 @@ services:
     image: kyokley/bs_int-nix
     build:
       dockerfile: ./Dockerfile-nix
-    command:
-      /bs_int/bin/bs-int runserver 0.0.0.0:8000
