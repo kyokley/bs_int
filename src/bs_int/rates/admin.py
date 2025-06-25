@@ -3,7 +3,7 @@ from io import BytesIO
 
 from django.contrib import admin
 from django.http import HttpResponse
-from rates.models import Excel, TreasuryData
+from bs_int.rates.models import Excel, TreasuryData
 
 
 # Register your models here.
