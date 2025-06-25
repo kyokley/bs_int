@@ -1,34 +1,19 @@
-FROM python:3.11-slim
+ARG BASE_IMAGE=python:3.12-slim
+FROM ${BASE_IMAGE} AS base
 
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV UV_PROJECT_DIR=/code
+ENV UV_PROJECT_ENVIRONMENT=/venv
+ENV PYTHONPATH=${UV_PROJECT_DIR}/src
 
-RUN pip install -U pip
-
-ENV POETRY_VENV=/poetry_venv
-RUN python3 -m venv $POETRY_VENV
-
-ENV VIRTUAL_ENV=/venv
-RUN python3 -m venv $VIRTUAL_ENV
+ENV VIRTUAL_ENV=${UV_PROJECT_ENVIRONMENT}
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# Add virtualenv to bash prompt
-RUN echo 'if [ -z "${VIRTUAL_ENV_DISABLE_PROMPT:-}" ] ; then \n\
-              _OLD_VIRTUAL_PS1="${PS1:-}" \n\
-              if [ "x(venv) " != x ] ; then \n\
-                PS1="(venv) ${PS1:-}" \n\
-              else \n\
-              if [ "`basename \"$VIRTUAL_ENV\"`" = "__" ] ; then \n\
-                  # special case for Aspen magic directories \n\
-                  # see http://www.zetadev.com/software/aspen/ \n\
-                  PS1="[`basename \`dirname \"$VIRTUAL_ENV\"\``] $PS1" \n\
-              else \n\
-                  PS1="(`basename \"$VIRTUAL_ENV\"`)$PS1" \n\
-              fi \n\
-              fi \n\
-              export PS1 \n\
-          fi' >> ~/.bashrc
+WORKDIR /tmp/media_root
+WORKDIR ${UV_PROJECT_DIR}
 
+FROM base AS builder
 # Install required packages and remove the apt packages cache when done.
 RUN apt-get update && apt-get install -y \
         gnupg \
@@ -37,17 +22,24 @@ RUN apt-get update && apt-get install -y \
         apt-transport-https \
         ncurses-dev \
         libpq-dev \
-        make
+        make && \
+        pip install -U --no-cache-dir pip uv && \
+        uv venv --seed ${VIRTUAL_ENV}
 
-COPY ./pdbrc.py /root/.pdbrc.py
+COPY uv.lock pyproject.toml README.md ${UV_PROJECT_DIR}/
 
-WORKDIR /code
-COPY poetry.lock pyproject.toml README.md /code/
-RUN $POETRY_VENV/bin/pip install poetry && \
-        $POETRY_VENV/bin/poetry install
+RUN uv sync --project ${UV_PROJECT_DIR}
 
-COPY . /code
+FROM base AS final
+WORKDIR ${UV_PROJECT_DIR}
 
-RUN $VIRTUAL_ENV/bin/pip install -e .
+RUN apt-get update && apt-get install -y \
+        ncurses-dev \
+        libpq-dev && \
+        pip install -U pip uv
+COPY pdbrc.py /root/.pdbrc.py
+COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
-WORKDIR /code/bs_int
+COPY . ${UV_PROJECT_DIR}
+
+CMD ["/venv/bin/bs-int", "runserver"]

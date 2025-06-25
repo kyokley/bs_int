@@ -1,0 +1,5 @@
+services:
+  bs_int:
+    image: kyokley/bs_int-nix
+    build:
+      dockerfile: ./Dockerfile-nix

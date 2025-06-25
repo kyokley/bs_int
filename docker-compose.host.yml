@@ -1,0 +1,4 @@
+services:
+  bs_int:
+    build:
+      network: host

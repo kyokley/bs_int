@@ -151,7 +151,8 @@ class TreasuryData(models.Model):
                             val = float(val)
                         else:
                             val = None
-                        setattr(self, self._treasury_map[key], val)
+                        if key in self._treasury_map:
+                            setattr(self, self._treasury_map[key], val)
                     except Exception as e:
                         raise ValidationError(
                             f"Got error getting {key} treasury data for {self.date}: {e}"
